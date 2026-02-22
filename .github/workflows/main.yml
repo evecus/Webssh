@@ -5,12 +5,16 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      version:
+        description: '发布版本号 (例如 v1.0.1)'
+        required: true
+        default: 'v1.0.1'
 
 jobs:
   build:
     name: Build Binaries
     runs-on: ubuntu-latest
-
     strategy:
       matrix:
         include:
@@ -20,7 +24,6 @@ jobs:
           - goos: linux
             goarch: arm64
             suffix: linux-arm64
-
     steps:
       - uses: actions/checkout@v4
 
@@ -35,7 +38,7 @@ jobs:
           GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: 0
         run: |
-          go mod tidy  # <--- 添加这一行，自动修复缺失的依赖记录
+          go mod tidy
           go build -ldflags="-s -w" -o webssh-${{ matrix.suffix }} ./cmd/webssh
 
       - name: Upload artifact
@@ -44,21 +47,114 @@ jobs:
           name: webssh-${{ matrix.suffix }}
           path: webssh-${{ matrix.suffix }}
 
-  release:
+  docker:
+    name: Build & Push Docker Image
     needs: build
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download amd64 binary
+        uses: actions/download-artifact@v4
+        with:
+          name: webssh-linux-amd64
+          path: dist
+
+      - name: Download arm64 binary
+        uses: actions/download-artifact@v4
+        with:
+          name: webssh-linux-arm64
+          path: dist
+
+      - name: Set executable bit
+        run: chmod +x dist/*
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Resolve version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${{ github.ref_name }}"
+          fi
+          VERSION_NUM="${VERSION#v}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "version_num=$VERSION_NUM" >> $GITHUB_OUTPUT
+
+      - name: Write Dockerfile
+        run: |
+          cat > Dockerfile << 'EOF'
+          FROM scratch
+          ARG TARGETARCH
+          COPY dist/webssh-linux-${TARGETARCH} /webssh
+          EXPOSE 8888
+          ENTRYPOINT ["/webssh"]
+          EOF
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/webssh:${{ steps.version.outputs.version_num }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/webssh:latest
+
+  release:
+    name: Create GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
     permissions:
       contents: write
 
     steps:
-      - uses: actions/download-artifact@v4
+      # checkout 必须在最前面，否则 git 操作会失败
+      - uses: actions/checkout@v4
+
+      - name: Create and push tag
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag ${{ github.event.inputs.version }}
+          git push origin ${{ github.event.inputs.version }}
+
+      # checkout 之后再下载 artifact
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
         with:
           path: dist
           merge-multiple: true
 
+      - name: List dist
+        run: ls -lh dist/
+
+      - name: Resolve tag name
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "name=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "name=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          fi
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.tag.outputs.name }}
           files: dist/*
           generate_release_notes: true
