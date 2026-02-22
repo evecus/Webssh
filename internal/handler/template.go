@@ -54,32 +54,33 @@ const indexHTML = `<!DOCTYPE html>
                  radial-gradient(ellipse 50% 60% at 80% 70%,rgba(124,58,237,0.07),transparent 55%);
       animation:meshFloat 14s ease-in-out infinite alternate;}
     @keyframes meshFloat{from{transform:translate(0,0) scale(1);}to{transform:translate(20px,-18px) scale(1.06);}}
-    .page{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px 40px;}
+    .page{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px 30px;}
     .topbar{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:flex-end;padding:14px 24px;}
     .btn-settings{width:40px;height:40px;border-radius:50%;border:1px solid var(--border);background:var(--surface);color:var(--text-muted);cursor:pointer;
       display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow);transition:all .2s;backdrop-filter:blur(10px);}
     .btn-settings:hover{color:var(--accent);border-color:var(--accent);transform:rotate(60deg);box-shadow:0 0 0 3px var(--accent-glow);}
-    .header{text-align:center;margin-bottom:36px;animation:fadeDown .7s cubic-bezier(.22,1,.36,1) both;}
-    .header-icon{width:62px;height:62px;border-radius:20px;background:linear-gradient(135deg,var(--accent),var(--accent2));
-      display:flex;align-items:center;justify-content:center;margin:0 auto 18px;
-      box-shadow:0 8px 32px var(--accent-glow);animation:iconBob 3.5s ease-in-out infinite;}
-    @keyframes iconBob{0%,100%{transform:translateY(0);}50%{transform:translateY(-7px);}}
-    .header h1{font-size:clamp(1.8rem,5vw,2.8rem);font-weight:800;letter-spacing:-.03em;
+    .header{text-align:center;margin-bottom:20px;animation:fadeDown .7s cubic-bezier(.22,1,.36,1) both;}
+    .header-title-row{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:6px;}
+    .header-icon{width:50px;height:50px;border-radius:16px;background:linear-gradient(135deg,var(--accent),var(--accent2));
+      display:flex;align-items:center;justify-content:center;flex-shrink:0;
+      box-shadow:0 6px 24px var(--accent-glow);animation:iconBob 3.5s ease-in-out infinite;}
+    @keyframes iconBob{0%,100%{transform:translateY(0);}50%{transform:translateY(-5px);}}
+    .header h1{font-size:clamp(1.6rem,4vw,2.4rem);font-weight:800;letter-spacing:-.03em;
       background:linear-gradient(135deg,var(--accent) 0%,var(--accent2) 100%);
-      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:6px;}
-    .header .subtitle{font-family:var(--font-mono);font-size:.7rem;color:var(--text-muted);letter-spacing:.22em;text-transform:uppercase;}
-    .pill-bar{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:12px;}
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:0;}
+    .header .subtitle{font-family:var(--font-mono);font-size:.68rem;color:var(--text-muted);letter-spacing:.22em;text-transform:uppercase;}
+    .pill-bar{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:10px;}
     .pill{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:100px;
       background:var(--surface);border:1px solid var(--border);font-size:.7rem;color:var(--text-muted);
       font-family:var(--font-mono);box-shadow:var(--shadow);}
     .pill-dot{width:6px;height:6px;border-radius:50%;background:var(--success);animation:pulse 2s ease-in-out infinite;}
-    .card{width:100%;max-width:540px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
-      padding:34px;box-shadow:var(--shadow-lg);position:relative;overflow:hidden;
+    .card{width:100%;max-width:680px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+      padding:36px 40px;box-shadow:var(--shadow-lg);position:relative;overflow:hidden;
       animation:fadeUp .7s cubic-bezier(.22,1,.36,1) .1s both;backdrop-filter:blur(20px);}
     .card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
       background:linear-gradient(90deg,transparent 0%,var(--accent) 40%,var(--accent2) 70%,transparent 100%);opacity:.75;}
     .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:17px;}
-    @media(max-width:520px){.form-grid{grid-template-columns:1fr;}.card{padding:22px;}}
+    @media(max-width:600px){.form-grid{grid-template-columns:1fr;}.card{padding:22px 18px;}.header-title-row{gap:10px;}}
     .field{display:flex;flex-direction:column;gap:7px;}
     .field.full{grid-column:1 / -1;}
     label{font-size:.68rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);}
@@ -195,12 +196,14 @@ const indexHTML = `<!DOCTYPE html>
 </div>
 <div class="page">
   <div class="header">
-    <div class="header-icon">
-      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>
-      </svg>
+    <div class="header-title-row">
+      <div class="header-icon">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>
+        </svg>
+      </div>
+      <h1>WebSSH Console</h1>
     </div>
-    <h1>WebSSH Console</h1>
     <p class="subtitle" data-i18n="subtitle">Secure Shell in Your Browser</p>
     <div class="pill-bar">
       <span class="pill"><span class="pill-dot"></span><span data-i18n="pill_ready">就绪</span></span>
