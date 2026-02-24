@@ -926,13 +926,14 @@ function renderSSHList() {
   const svgDel = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>';
   container.innerHTML = sshProfiles.map(function(p) {
     var sel = selectedProfileId === p.id ? ' selected' : '';
-    return '<div class="ssh-item' + sel + '" onclick="selectProfile(' + JSON.stringify(p.id) + ')">' +
+    var safeId = String(p.id).replace(/'/g, "\\'");
+    return '<div class="ssh-item' + sel + '" onclick="selectProfile(\'' + safeId + '\')">' +
       '<div class="ssh-item-icon">' + svgServer + '</div>' +
       '<div class="ssh-item-info">' +
         '<div class="ssh-item-name">' + escHtml(p.name||p.host) + '</div>' +
         '<div class="ssh-item-detail">' + escHtml(p.username||'root') + '@' + escHtml(p.host) + ':' + (p.port||22) + '</div>' +
       '</div>' +
-      '<button class="ssh-item-del" onclick="deleteSSHProfile(' + JSON.stringify(p.id) + ',event)" title="删除">' + svgDel + '</button>' +
+      '<button class="ssh-item-del" onclick="deleteSSHProfile(\'' + safeId + '\',event)" title="删除">' + svgDel + '</button>' +
     '</div>';
   }).join('');
 }
