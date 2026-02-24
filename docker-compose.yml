@@ -6,7 +6,7 @@ services:
     ports:
       - "8888:8888"
     volumes:
-      - ./data:/app/data
+      - ./data:/data
     environment:
       - PORT=8888
       - AUTH=false      # 设为 true 启用登录认证
