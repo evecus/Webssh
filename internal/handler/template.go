@@ -89,7 +89,7 @@ const setupHTMLTemplate = `<!DOCTYPE html>
         <label>密码</label>
         <div class="input-wrap">
           <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          <input type="password" name="password" placeholder="设置密码（至少6位）" required autocomplete="new-password"/>
+          <input type="password" name="password" placeholder="设置密码（至少1位）" required autocomplete="new-password"/>
         </div>
       </div>
       <div class="field">
