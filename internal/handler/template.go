@@ -457,20 +457,28 @@ const indexHTMLTemplate = `<!DOCTYPE html>
 
     /* ---- TERMINAL WINDOW ---- */
     #term-window{display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.45);
-      backdrop-filter:blur(9px);align-items:center;justify-content:center;}
+      backdrop-filter:blur(9px);align-items:center;justify-content:center;
+      /* 修复：禁止弹窗层面的触摸弹跳/滚动 */
+      overscroll-behavior:none;touch-action:none;}
     #term-window.open{display:flex;animation:fadeIn .3s ease both;}
+    /* 桌面端弹窗 */
     .term-popup{width:calc(100vw - 32px);max-width:980px;height:calc(100vh - 60px);max-height:700px;
       background:#0d1117;border-radius:12px;border:1px solid #1e2d45;overflow:hidden;
       display:flex;flex-direction:column;box-shadow:0 32px 80px rgba(0,0,0,.65);
       animation:popIn .3s cubic-bezier(.22,1,.36,1) both;}
+    @keyframes popIn{from{transform:scale(.93) translateY(20px);opacity:0;}to{transform:scale(1) translateY(0);opacity:1;}}
+    /* 移动端：真正全屏，顶部到安全区底部 */
     @media(max-width:640px){
-      #term-window{align-items:flex-end;padding:0;}
-      .term-popup{width:100%;max-width:100%;height:calc(100% - env(safe-area-inset-top,0px));
-        max-height:none;border-radius:16px 16px 0 0;border:none;
+      #term-window{align-items:stretch;padding:0;}
+      .term-popup{
+        width:100%;max-width:100%;
+        /* 全高：减去顶部安全区（刘海/状态栏），底部安全区由vkb的padding-bottom吃掉 */
+        height:calc(100% - env(safe-area-inset-top,0px));
+        margin-top:env(safe-area-inset-top,0px);
+        max-height:none;border-radius:0;border:none;
         animation:slideUp .3s cubic-bezier(.22,1,.36,1) both;}
       @keyframes slideUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
     }
-    @keyframes popIn{from{transform:scale(.93) translateY(20px);opacity:0;}to{transform:scale(1) translateY(0);opacity:1;}}
     .term-titlebar{display:flex;align-items:center;padding:8px 12px;background:#111827;border-bottom:1px solid #1e2d45;gap:8px;flex-shrink:0;}
     .term-status-dot{width:9px;height:9px;border-radius:50%;background:#28c840;flex-shrink:0;animation:pulse 2.5s ease-in-out infinite;}
     .term-title-text{font-family:var(--font-mono);font-size:.72rem;color:#94a3b8;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -478,18 +486,24 @@ const indexHTMLTemplate = `<!DOCTYPE html>
       border:1px solid #ef4444;border-radius:6px;color:#ef4444;font-family:var(--font-mono);
       font-size:.68rem;cursor:pointer;transition:all .2s;white-space:nowrap;flex-shrink:0;}
     .btn-disc:hover{background:#ef4444;color:#fff;}
-    #terminal{flex:1;overflow:hidden;padding:3px;}
+    /* 修复：终端区域允许触摸纵向滚动，阻止冒泡给弹窗 */
+    #terminal{flex:1;overflow:hidden;padding:3px;touch-action:pan-y;overscroll-behavior:contain;}
 
-    /* ---- VIRTUAL KEYBOARD ---- */
+    /* ---- VIRTUAL KEYBOARD（修复：多行显示，不再横向滚动） ---- */
     .vkb{display:none;flex-shrink:0;background:#1a2236;border-top:1px solid #1e2d45;
-      padding:6px 8px;gap:5px;overflow-x:auto;scrollbar-width:none;
-      padding-bottom:calc(6px + env(safe-area-inset-bottom,0px));}
-    .vkb::-webkit-scrollbar{display:none;}
+      padding:5px 6px;gap:4px;
+      /* 修复：换行替代横滑 */
+      flex-wrap:wrap;
+      padding-bottom:calc(5px + env(safe-area-inset-bottom,0px));}
     .vkb.show{display:flex;}
-    .vkb-btn{flex-shrink:0;padding:7px 13px;background:#0d1117;border:1px solid #2d3f5a;
+    .vkb-btn{
+      /* 修复：自适应宽度，约8个一行，多则自动折行 */
+      flex:1 1 calc(12.5% - 4px);min-width:44px;max-width:72px;
+      padding:8px 4px;background:#0d1117;border:1px solid #2d3f5a;
       border-radius:6px;color:#94a3b8;font-family:var(--font-mono);font-size:.72rem;
       cursor:pointer;transition:all .15s;user-select:none;-webkit-user-select:none;
-      -webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+      -webkit-tap-highlight-color:transparent;touch-action:manipulation;
+      text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
     .vkb-btn:active{background:rgba(168,85,247,0.2);color:#c084fc;border-color:#a855f7;}
 
     /* ---- ANIMATIONS ---- */
@@ -1223,7 +1237,35 @@ window.addEventListener('resize', () => {
 function openTermWindow(label) {
   document.getElementById('term-title').textContent = label;
   document.getElementById('term-window').classList.add('open');
+  // 修复弹窗弹跳：锁定 body 滚动
+  document.body.style.overflow = 'hidden';
+  document.body.style.position = 'fixed';
+  document.body.style.width = '100%';
   updateVkb();
+  // 修复终端触摸滚动：接管 #terminal 内的 touchmove，让 xterm viewport 自己滚
+  const termEl = document.getElementById('terminal');
+  if (termEl && !termEl._touchScrollBound) {
+    termEl._touchScrollBound = true;
+    let _ty = 0;
+    termEl.addEventListener('touchstart', ev => {
+      if (ev.touches.length === 1) _ty = ev.touches[0].clientY;
+    }, {passive: true});
+    termEl.addEventListener('touchmove', ev => {
+      if (ev.touches.length !== 1) return;
+      const vp = termEl.querySelector('.xterm-viewport');
+      if (!vp) return;
+      const dy = _ty - ev.touches[0].clientY;
+      _ty = ev.touches[0].clientY;
+      // 在滚动边界内才阻止冒泡，避免整页弹跳
+      const atTop = vp.scrollTop <= 0 && dy < 0;
+      const atBot = vp.scrollTop + vp.clientHeight >= vp.scrollHeight - 1 && dy > 0;
+      if (!atTop && !atBot) {
+        ev.stopPropagation();
+        vp.scrollTop += dy;
+      }
+      ev.preventDefault();
+    }, {passive: false});
+  }
   setTimeout(() => {
     fitAddon && fitAddon.fit();
     term && term.focus();
@@ -1234,6 +1276,10 @@ function openTermWindow(label) {
 function closeTermWindow() {
   document.getElementById('term-window').classList.remove('open');
   document.getElementById('vkb').classList.remove('show');
+  // 恢复 body 滚动
+  document.body.style.overflow = '';
+  document.body.style.position = '';
+  document.body.style.width = '';
 }
 
 function connect() {
