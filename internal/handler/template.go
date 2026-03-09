@@ -1395,10 +1395,10 @@ function openCopyViewer() {
   closeLongpressMenu();
   if (!term) return;
 
-  // 读取当前 scrollback 中最近100行
+  // 读取当前 scrollback 中最近50行
   const buf = term.buffer.active;
   const totalLines = buf.length;
-  const startLine = Math.max(0, totalLines - 20);
+  const startLine = Math.max(0, totalLines - 50);
   const lines = [];
   for (let i = startLine; i < totalLines; i++) {
     const line = buf.getLine(i);
