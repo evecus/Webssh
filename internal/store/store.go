@@ -19,11 +19,11 @@ const DataDir = "data"
 
 var mu sync.RWMutex
 
-// encryptionKey 用于加密SSH敏感字段（密码/私钥/passphrase）
-// 从 data/secret.key 文件读取或自动生成
+// setupMu 专用于 setup 阶段，防止并发竞态写入 auth.json（修复问题10）
+var setupMu sync.Mutex
+
 var encryptionKey []byte
 
-// LoadOrCreateEncryptionKey 从文件加载或创建加密密钥
 func LoadOrCreateEncryptionKey() error {
 	keyPath := filepath.Join(DataDir, "secret.key")
 	data, err := os.ReadFile(keyPath)
@@ -34,7 +34,6 @@ func LoadOrCreateEncryptionKey() error {
 			return nil
 		}
 	}
-	// 生成新的32字节随机key
 	key := make([]byte, 32)
 	if _, err := io.ReadFull(rand.Reader, key); err != nil {
 		return err
@@ -47,7 +46,6 @@ func LoadOrCreateEncryptionKey() error {
 	return nil
 }
 
-// encrypt 使用AES-GCM加密明文，返回 "enc:" 前缀的hex编码密文
 func encrypt(plaintext string) (string, error) {
 	if plaintext == "" || encryptionKey == nil {
 		return plaintext, nil
@@ -68,11 +66,10 @@ func encrypt(plaintext string) (string, error) {
 	return "enc:" + hex.EncodeToString(ciphertext), nil
 }
 
-// decrypt 解密 encrypt() 产生的密文；若不是加密格式则原样返回（兼容旧数据）
 func decrypt(ciphertext string) (string, error) {
 	const prefix = "enc:"
 	if len(ciphertext) < len(prefix) || ciphertext[:len(prefix)] != prefix {
-		return ciphertext, nil // 旧数据明文兼容
+		return ciphertext, nil
 	}
 	if encryptionKey == nil {
 		return "", errors.New("encryption key not loaded")
@@ -100,7 +97,6 @@ func decrypt(ciphertext string) (string, error) {
 	return string(plaintext), nil
 }
 
-// generateID 使用 crypto/rand 生成唯一ID，杜绝时间戳碰撞
 func generateID() string {
 	b := make([]byte, 8)
 	if _, err := io.ReadFull(rand.Reader, b); err != nil {
@@ -110,13 +106,14 @@ func generateID() string {
 	return time.Now().Format("20060102150405") + hex.EncodeToString(b)
 }
 
-// AuthData stores hashed credentials
 type AuthData struct {
 	Username     string `json:"username"`
 	PasswordHash string `json:"password_hash"`
 }
 
-// SSHProfile stores an SSH connection profile
+// SSHProfile stores an SSH connection profile.
+// Password/PrivateKey/Passphrase fields are NEVER sent to the client in plaintext.
+// The API returns a masked version via SSHProfileSafe.
 type SSHProfile struct {
 	ID         string `json:"id"`
 	Name       string `json:"name"`
@@ -126,17 +123,46 @@ type SSHProfile struct {
 	Password   string `json:"password,omitempty"`
 	PrivateKey string `json:"private_key,omitempty"`
 	Passphrase string `json:"passphrase,omitempty"`
-	AuthType   string `json:"auth_type"` // "password" or "key"
+	AuthType   string `json:"auth_type"`
 	CreatedAt  string `json:"created_at"`
 }
 
-// Settings stores UI preferences
+// SSHProfileSafe 是对外 API 安全视图：敏感字段仅用布尔标志表示是否已设置（修复问题12）
+type SSHProfileSafe struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Host        string `json:"host"`
+	Port        int    `json:"port"`
+	Username    string `json:"username"`
+	AuthType    string `json:"auth_type"`
+	HasPassword bool   `json:"has_password"`
+	HasKey      bool   `json:"has_key"`
+	HasPassphrase bool  `json:"has_passphrase"`
+	CreatedAt   string `json:"created_at"`
+}
+
+// ToSafe 将 SSHProfile 转为安全视图（不含明文凭证）
+func (p SSHProfile) ToSafe() SSHProfileSafe {
+	return SSHProfileSafe{
+		ID:            p.ID,
+		Name:          p.Name,
+		Host:          p.Host,
+		Port:          p.Port,
+		Username:      p.Username,
+		AuthType:      p.AuthType,
+		HasPassword:   p.Password != "",
+		HasKey:        p.PrivateKey != "",
+		HasPassphrase: p.Passphrase != "",
+		CreatedAt:     p.CreatedAt,
+	}
+}
+
 type Settings struct {
 	Theme    string `json:"theme"`
 	UIFont   string `json:"ui_font"`
 	TermFont string `json:"term_font"`
-	TermBg   string `json:"term_bg"`   // 终端背景主题，如 "dark","dracula","solarized"...
-	FontSize int    `json:"font_size"` // 终端字号，如 12,13,14,16,18
+	TermBg   string `json:"term_bg"`
+	FontSize int    `json:"font_size"`
 	Lang     string `json:"lang"`
 }
 
@@ -178,7 +204,14 @@ func LoadAuth() (*AuthData, error) {
 	return &a, nil
 }
 
+// SaveAuth 使用专用互斥锁，防止 setup 阶段并发写入竞态（修复问题10）
 func SaveAuth(a *AuthData) error {
+	setupMu.Lock()
+	defer setupMu.Unlock()
+	// 再次检查：防止在等待锁期间已被写入
+	if _, err := os.Stat(filePath("auth.json")); err == nil {
+		return errors.New("auth already initialized")
+	}
 	return writeJSON("auth.json", a)
 }
 
@@ -201,7 +234,6 @@ func LoadSettings() (*Settings, error) {
 			Lang:     "zh",
 		}, nil
 	}
-	// 给旧数据补默认值
 	if s.TermBg == "" {
 		s.TermBg = "dark"
 	}
@@ -217,7 +249,6 @@ func SaveSettings(s *Settings) error {
 
 // ---- SSH Profiles ----
 
-// LoadSSHProfilesRaw 读取原始（加密状态）的profiles，内部使用
 func LoadSSHProfilesRaw() ([]SSHProfile, error) {
 	var profiles []SSHProfile
 	if err := readJSON("ssh.json", &profiles); err != nil {
@@ -226,7 +257,7 @@ func LoadSSHProfilesRaw() ([]SSHProfile, error) {
 	return profiles, nil
 }
 
-// LoadSSHProfiles 读取并解密所有profiles，供外部调用
+// LoadSSHProfiles 读取并解密，返回完整的 SSHProfile（内部使用，如连接时取凭证）
 func LoadSSHProfiles() ([]SSHProfile, error) {
 	profiles, err := LoadSSHProfilesRaw()
 	if err != nil {
@@ -235,7 +266,21 @@ func LoadSSHProfiles() ([]SSHProfile, error) {
 	return decryptProfiles(profiles), nil
 }
 
-// decryptProfiles 解密一批profiles中的敏感字段（返回副本，不修改原数据）
+// LoadSSHProfilesSafe 返回安全视图列表，不含任何明文凭证（供 API 对外使用，修复问题12）
+func LoadSSHProfilesSafe() ([]SSHProfileSafe, error) {
+	profiles, err := LoadSSHProfilesRaw()
+	if err != nil {
+		return nil, err
+	}
+	// 解密以判断字段是否有值（注意：解密后的值不对外暴露）
+	decrypted := decryptProfiles(profiles)
+	result := make([]SSHProfileSafe, len(decrypted))
+	for i, p := range decrypted {
+		result[i] = p.ToSafe()
+	}
+	return result, nil
+}
+
 func decryptProfiles(raw []SSHProfile) []SSHProfile {
 	result := make([]SSHProfile, len(raw))
 	for i, p := range raw {
@@ -247,8 +292,7 @@ func decryptProfiles(raw []SSHProfile) []SSHProfile {
 	return result
 }
 
-func SaveSSHProfile(p SSHProfile) ([]SSHProfile, error) {
-	// 加密敏感字段
+func SaveSSHProfile(p SSHProfile) ([]SSHProfileSafe, error) {
 	var err error
 	if p.Password, err = encrypt(p.Password); err != nil {
 		return nil, err
@@ -261,11 +305,23 @@ func SaveSSHProfile(p SSHProfile) ([]SSHProfile, error) {
 	}
 
 	profiles, _ := LoadSSHProfilesRaw()
-	// Check if updating existing
 	for i, existing := range profiles {
 		if existing.ID == p.ID {
+			// 若客户端未传敏感字段（空），则保留原有加密值
+			if p.Password == "" {
+				p.Password = existing.Password
+			}
+			if p.PrivateKey == "" {
+				p.PrivateKey = existing.PrivateKey
+			}
+			if p.Passphrase == "" {
+				p.Passphrase = existing.Passphrase
+			}
 			profiles[i] = p
-			return decryptProfiles(profiles), writeJSON("ssh.json", profiles)
+			if err := writeJSON("ssh.json", profiles); err != nil {
+				return nil, err
+			}
+			return safeList(profiles), nil
 		}
 	}
 	if p.ID == "" {
@@ -273,10 +329,13 @@ func SaveSSHProfile(p SSHProfile) ([]SSHProfile, error) {
 	}
 	p.CreatedAt = time.Now().Format(time.RFC3339)
 	profiles = append(profiles, p)
-	return decryptProfiles(profiles), writeJSON("ssh.json", profiles)
+	if err := writeJSON("ssh.json", profiles); err != nil {
+		return nil, err
+	}
+	return safeList(profiles), nil
 }
 
-func DeleteSSHProfile(id string) ([]SSHProfile, error) {
+func DeleteSSHProfile(id string) ([]SSHProfileSafe, error) {
 	profiles, _ := LoadSSHProfilesRaw()
 	var updated []SSHProfile
 	for _, p := range profiles {
@@ -287,7 +346,18 @@ func DeleteSSHProfile(id string) ([]SSHProfile, error) {
 	if updated == nil {
 		updated = []SSHProfile{}
 	}
-	return decryptProfiles(updated), writeJSON("ssh.json", updated)
+	if err := writeJSON("ssh.json", updated); err != nil {
+		return nil, err
+	}
+	return safeList(updated), nil
 }
 
-
+// safeList 将加密存储的 profiles 转为安全视图列表
+func safeList(raw []SSHProfile) []SSHProfileSafe {
+	decrypted := decryptProfiles(raw)
+	result := make([]SSHProfileSafe, len(decrypted))
+	for i, p := range decrypted {
+		result[i] = p.ToSafe()
+	}
+	return result
+}

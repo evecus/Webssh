@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode"
 
 	"github.com/gorilla/websocket"
 	"golang.org/x/crypto/bcrypt"
@@ -25,10 +26,132 @@ type AppConfig struct {
 	StoreEnabled bool
 }
 
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  4096,
-	WriteBufferSize: 4096,
-	CheckOrigin:     func(r *http.Request) bool { return true },
+// ---- WebSocket Upgrader（修复问题2：严格 Origin 校验，防止 CSRF） ----
+
+func makeUpgrader(cfg AppConfig) websocket.Upgrader {
+	return websocket.Upgrader{
+		ReadBufferSize:  4096,
+		WriteBufferSize: 4096,
+		CheckOrigin: func(r *http.Request) bool {
+			if !cfg.AuthEnabled {
+				return true // 无认证模式下放行（依赖网络层隔离）
+			}
+			origin := r.Header.Get("Origin")
+			if origin == "" {
+				return false
+			}
+			// 只允许与当前服务器同源
+			host := r.Host
+			return origin == "http://"+host || origin == "https://"+host
+		},
+	}
+}
+
+// ---- 登录频率限制（修复问题4：防止暴力破解） ----
+
+type loginAttempt struct {
+	count     int
+	firstAt   time.Time
+	lockedUntil time.Time
+}
+
+const (
+	maxLoginAttempts  = 5               // 窗口内最大失败次数
+	attemptWindow     = 5 * time.Minute // 计数窗口
+	lockoutDuration   = 15 * time.Minute // 锁定时长
+)
+
+var (
+	loginAttempts   = map[string]*loginAttempt{}
+	loginAttemptsMu sync.Mutex
+)
+
+// getClientIP 提取客户端 IP
+func getClientIP(r *http.Request) string {
+	if fwd := r.Header.Get("X-Forwarded-For"); fwd != "" {
+		parts := strings.Split(fwd, ",")
+		return strings.TrimSpace(parts[0])
+	}
+	ip := r.RemoteAddr
+	if i := strings.LastIndex(ip, ":"); i != -1 {
+		ip = ip[:i]
+	}
+	return ip
+}
+
+// checkLoginRateLimit 返回 (允许, 剩余等待秒数)
+func checkLoginRateLimit(ip string) (bool, int) {
+	loginAttemptsMu.Lock()
+	defer loginAttemptsMu.Unlock()
+
+	now := time.Now()
+	a, ok := loginAttempts[ip]
+	if !ok {
+		return true, 0
+	}
+
+	// 在锁定期内
+	if now.Before(a.lockedUntil) {
+		remaining := int(a.lockedUntil.Sub(now).Seconds()) + 1
+		return false, remaining
+	}
+
+	// 窗口已过期，重置
+	if now.Sub(a.firstAt) > attemptWindow {
+		delete(loginAttempts, ip)
+		return true, 0
+	}
+
+	return a.count < maxLoginAttempts, 0
+}
+
+// recordLoginFailure 记录一次失败
+func recordLoginFailure(ip string) {
+	loginAttemptsMu.Lock()
+	defer loginAttemptsMu.Unlock()
+
+	now := time.Now()
+	a, ok := loginAttempts[ip]
+	if !ok || now.Sub(a.firstAt) > attemptWindow {
+		loginAttempts[ip] = &loginAttempt{count: 1, firstAt: now}
+		return
+	}
+	a.count++
+	if a.count >= maxLoginAttempts {
+		a.lockedUntil = now.Add(lockoutDuration)
+	}
+}
+
+// resetLoginFailure 登录成功后清除记录
+func resetLoginFailure(ip string) {
+	loginAttemptsMu.Lock()
+	defer loginAttemptsMu.Unlock()
+	delete(loginAttempts, ip)
+}
+
+// ---- 密码强度校验（修复问题6） ----
+
+const minPasswordLength = 8
+
+func validatePasswordStrength(password string) string {
+	if len(password) < minPasswordLength {
+		return "密码长度至少 8 位"
+	}
+	var hasUpper, hasLower, hasDigit bool
+	for _, c := range password {
+		switch {
+		case unicode.IsUpper(c):
+			hasUpper = true
+		case unicode.IsLower(c):
+			hasLower = true
+		case unicode.IsDigit(c):
+			hasDigit = true
+		}
+	}
+	if !hasUpper || !hasLower || !hasDigit {
+		return "密码须包含大写字母、小写字母和数字"
+	}
+	return ""
 }
 
 // ---- Session Management ----
@@ -43,16 +166,14 @@ var (
 	sessionsMu sync.RWMutex
 )
 
-// sessionsFilePath 返回会话持久化文件路径（仅auth模式下使用）
 func sessionsFilePath() string {
 	return store.DataDir + "/sessions.json"
 }
 
-// loadSessionsFromDisk 从文件恢复会话（程序启动时调用）
 func loadSessionsFromDisk() {
 	data, err := os.ReadFile(sessionsFilePath())
 	if err != nil {
-		return // 文件不存在则跳过
+		return
 	}
 	var saved map[string]*session
 	if err := json.Unmarshal(data, &saved); err != nil {
@@ -62,13 +183,12 @@ func loadSessionsFromDisk() {
 	sessionsMu.Lock()
 	defer sessionsMu.Unlock()
 	for token, s := range saved {
-		if now.Before(s.ExpiresAt) { // 只恢复未过期的
+		if now.Before(s.ExpiresAt) {
 			sessions[token] = s
 		}
 	}
 }
 
-// saveSessionsToDisk 将当前有效会话写入文件
 func saveSessionsToDisk() {
 	sessionsMu.RLock()
 	snapshot := make(map[string]*session, len(sessions))
@@ -84,11 +204,12 @@ func saveSessionsToDisk() {
 	if err != nil {
 		return
 	}
+	// 修复问题5：使用严格权限 0600 写文件
 	os.WriteFile(sessionsFilePath(), data, 0600) //nolint:errcheck
 }
 
 func newSession(username string) string {
-	b := make([]byte, 24)
+	b := make([]byte, 32) // 增加 token 长度（256 bit 熵）
 	rand.Read(b)
 	token := hex.EncodeToString(b)
 	sessionsMu.Lock()
@@ -124,7 +245,6 @@ func deleteSession(token string) {
 func Register(mux *http.ServeMux, cfg AppConfig) {
 	h := &appHandler{cfg: cfg}
 
-	// 启动时从磁盘恢复未过期会话
 	if cfg.AuthEnabled {
 		loadSessionsFromDisk()
 	}
@@ -176,7 +296,7 @@ type pageConfig struct {
 func (a *appHandler) renderPage(w http.ResponseWriter, tmplStr string, data interface{}) {
 	tmpl, err := template.New("page").Parse(tmplStr)
 	if err != nil {
-		http.Error(w, "Template error: "+err.Error(), 500)
+		http.Error(w, "Template error", 500) // 修复问题9：不暴露内部错误详情
 		return
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -223,24 +343,31 @@ func (a *appHandler) setupHandler(w http.ResponseWriter, r *http.Request) {
 			a.renderPage(w, setupHTMLTemplate, data)
 			return
 		}
-		if len(password) < 1 {
-			data["Error"] = "密码不能为空"
+
+		// 修复问题6：密码强度校验
+		if msg := validatePasswordStrength(password); msg != "" {
+			data["Error"] = msg
 			a.renderPage(w, setupHTMLTemplate, data)
 			return
 		}
 
 		hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 		if err != nil {
-			data["Error"] = "系统错误，请重试"
+			data["Error"] = "系统错误，请重试" // 修复问题9：不暴露内部错误
 			a.renderPage(w, setupHTMLTemplate, data)
 			return
 		}
 
+		// 修复问题10：SaveAuth 内部使用互斥锁防止并发竞态
 		if err := store.SaveAuth(&store.AuthData{
 			Username:     username,
 			PasswordHash: string(hash),
 		}); err != nil {
-			data["Error"] = "保存失败: " + err.Error()
+			if err.Error() == "auth already initialized" {
+				http.Redirect(w, r, "/login", http.StatusFound)
+				return
+			}
+			data["Error"] = "保存失败，请重试" // 修复问题9：不暴露内部错误
 			a.renderPage(w, setupHTMLTemplate, data)
 			return
 		}
@@ -272,16 +399,33 @@ func (a *appHandler) loginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == http.MethodPost {
+		ip := getClientIP(r)
+
+		// 修复问题4：检查频率限制
+		allowed, waitSec := checkLoginRateLimit(ip)
+		if !allowed {
+			if waitSec > 0 {
+				data["Error"] = "登录失败次数过多，请稍后再试"
+			} else {
+				data["Error"] = "请求过于频繁，请稍后再试"
+			}
+			a.renderPage(w, loginHTMLTemplate, data)
+			return
+		}
+
 		username := strings.TrimSpace(r.FormValue("username"))
 		password := r.FormValue("password")
 
 		authData, err := store.LoadAuth()
 		if err != nil || authData.Username != username ||
 			bcrypt.CompareHashAndPassword([]byte(authData.PasswordHash), []byte(password)) != nil {
+			recordLoginFailure(ip) // 记录失败
 			data["Error"] = "用户名或密码错误"
 			a.renderPage(w, loginHTMLTemplate, data)
 			return
 		}
+
+		resetLoginFailure(ip) // 登录成功，清除失败记录
 
 		token := newSession(username)
 		http.SetCookie(w, &http.Cookie{
@@ -290,7 +434,8 @@ func (a *appHandler) loginHandler(w http.ResponseWriter, r *http.Request) {
 			Path:     "/",
 			HttpOnly: true,
 			MaxAge:   86400,
-			SameSite: http.SameSiteLaxMode,
+			SameSite: http.SameSiteStrictMode, // 修复问题2+11：Lax -> Strict
+			// Secure 由 HTTPS 层控制；若强制 HTTPS 可设为 true
 		})
 		http.Redirect(w, r, "/", http.StatusFound)
 		return
@@ -338,7 +483,8 @@ func (a *appHandler) sshProfilesAPIHandler(w http.ResponseWriter, r *http.Reques
 	w.Header().Set("Content-Type", "application/json")
 	switch r.Method {
 	case http.MethodGet:
-		profiles, _ := store.LoadSSHProfiles()
+		// 修复问题12：返回安全视图，不含明文凭证
+		profiles, _ := store.LoadSSHProfilesSafe()
 		json.NewEncoder(w).Encode(profiles)
 	case http.MethodPost:
 		var p store.SSHProfile
@@ -348,7 +494,7 @@ func (a *appHandler) sshProfilesAPIHandler(w http.ResponseWriter, r *http.Reques
 		}
 		profiles, err := store.SaveSSHProfile(p)
 		if err != nil {
-			http.Error(w, err.Error(), 500)
+			http.Error(w, "internal error", 500) // 修复问题9：不暴露内部错误
 			return
 		}
 		json.NewEncoder(w).Encode(profiles)
@@ -360,7 +506,7 @@ func (a *appHandler) sshProfilesAPIHandler(w http.ResponseWriter, r *http.Reques
 		}
 		profiles, err := store.DeleteSSHProfile(id)
 		if err != nil {
-			http.Error(w, err.Error(), 500)
+			http.Error(w, "internal error", 500)
 			return
 		}
 		json.NewEncoder(w).Encode(profiles)
@@ -382,6 +528,7 @@ type Message struct {
 	Passphrase string `json:"passphrase,omitempty"`
 	Rows       uint32 `json:"rows,omitempty"`
 	Cols       uint32 `json:"cols,omitempty"`
+	ProfileID  string `json:"profile_id,omitempty"` // 通过 ID 使用已存储凭证
 }
 
 type wsConn struct {
@@ -396,6 +543,7 @@ func (w *wsConn) writeJSON(v interface{}) error {
 }
 
 func (a *appHandler) wsHandler(w http.ResponseWriter, r *http.Request) {
+	upgrader := makeUpgrader(a.cfg) // 修复问题2：使用严格 Origin 校验的 upgrader
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Printf("websocket upgrade error: %v", err)
@@ -420,16 +568,47 @@ func (a *appHandler) wsHandler(w http.ResponseWriter, r *http.Request) {
 		msg.Port = 22
 	}
 
-	cfg := sshtunnel.Config{
-		Host:       msg.Host,
-		Port:       msg.Port,
-		Username:   msg.Username,
-		Password:   msg.Password,
-		PrivateKey: []byte(msg.PrivateKey),
-		Passphrase: []byte(msg.Passphrase),
+	var sshCfg sshtunnel.Config
+
+	// 若指定了 profile_id，从存储中取凭证（避免凭证在网络上传输）
+	if msg.ProfileID != "" && a.cfg.StoreEnabled {
+		profiles, err := store.LoadSSHProfiles()
+		if err != nil {
+			wsc.writeJSON(map[string]string{"type": "error", "data": "failed to load profiles"})
+			return
+		}
+		found := false
+		for _, p := range profiles {
+			if p.ID == msg.ProfileID {
+				sshCfg = sshtunnel.Config{
+					Host:       p.Host,
+					Port:       p.Port,
+					Username:   p.Username,
+					Password:   p.Password,
+					PrivateKey: []byte(p.PrivateKey),
+					Passphrase: []byte(p.Passphrase),
+				}
+				found = true
+				break
+			}
+		}
+		if !found {
+			wsc.writeJSON(map[string]string{"type": "error", "data": "profile not found"})
+			return
+		}
+	} else {
+		// 直接传入凭证模式（临时连接）
+		sshCfg = sshtunnel.Config{
+			Host:       msg.Host,
+			Port:       msg.Port,
+			Username:   msg.Username,
+			Password:   msg.Password,
+			PrivateKey: []byte(msg.PrivateKey),
+			Passphrase: []byte(msg.Passphrase),
+		}
 	}
 
-	sshSession, err := sshtunnel.Connect(cfg)
+	sshSession, err := sshtunnel.Connect(sshCfg)
 	if err != nil {
 		wsc.writeJSON(map[string]string{"type": "error", "data": err.Error()})
 		return
@@ -442,7 +621,6 @@ func (a *appHandler) wsHandler(w http.ResponseWriter, r *http.Request) {
 	errCh := make(chan error, 2)
 	sshSession.ReadLoop(outCh, errCh)
 
-	// wsMsgCh 接收来自浏览器的WebSocket消息，独立goroutine阻塞读取
 	type wsRawMsg struct {
 		data []byte
 		err  error
@@ -460,7 +638,6 @@ func (a *appHandler) wsHandler(w http.ResponseWriter, r *http.Request) {
 
 	for {
 		select {
-		// SSH输出 → 浏览器
 		case data, ok := <-outCh:
 			if !ok {
 				return
@@ -469,7 +646,6 @@ func (a *appHandler) wsHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-		// SSH会话结束
 		case sshErr := <-errCh:
 			if sshErr != nil {
 				wsc.writeJSON(map[string]string{"type": "error", "data": sshErr.Error()})
@@ -478,7 +654,6 @@ func (a *appHandler) wsHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			return
 
-		// 浏览器输入 → SSH
 		case wsm := <-wsMsgCh:
 			if wsm.err != nil {
 				return
