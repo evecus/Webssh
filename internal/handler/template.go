@@ -718,7 +718,6 @@ const indexHTMLTemplate = `<!DOCTYPE html>
       <button class="vkb-btn" ontouchend="e(event);sendKey('_')" onclick="sendKey('_')">_</button>
       <button class="vkb-btn" ontouchend="e(event);sendKey('~')" onclick="sendKey('~')">~</button>
       <button class="vkb-btn" ontouchend="e(event);sendKey('=')" onclick="sendKey('=')">=</button>
-      <button class="vkb-btn" ontouchend="e(event);sendCtrl('c')" onclick="sendCtrl('c')">Ctrl+C</button>
       <button class="vkb-btn" ontouchend="e(event);sendKey('\\')" onclick="sendKey('\\')">\</button>
       <button class="vkb-btn" ontouchend="e(event);sendKey('|')" onclick="sendKey('|')">|</button>
       <button class="vkb-btn" ontouchend="e(event);sendKey('\x1b[A')" onclick="sendKey('\x1b[A')">↑</button>
@@ -726,6 +725,7 @@ const indexHTMLTemplate = `<!DOCTYPE html>
       <button class="vkb-btn" ontouchend="e(event);sendKey('\x1b[D')" onclick="sendKey('\x1b[D')">←</button>
       <button class="vkb-btn" ontouchend="e(event);sendKey('\x1b[C')" onclick="sendKey('\x1b[C')">→</button>
       <button class="vkb-btn" ontouchend="e(event);sendKey('\x1b')" onclick="sendKey('\x1b')">ESC</button>
+      <button class="vkb-btn" ontouchend="e(event);sendCtrl('c')" onclick="sendCtrl('c')">Ctrl+C</button>
     </div>
   </div>
 </div>
@@ -1398,7 +1398,7 @@ function openCopyViewer() {
   // 读取当前 scrollback 中最近100行
   const buf = term.buffer.active;
   const totalLines = buf.length;
-  const startLine = Math.max(0, totalLines - 100);
+  const startLine = Math.max(0, totalLines - 20);
   const lines = [];
   for (let i = startLine; i < totalLines; i++) {
     const line = buf.getLine(i);
