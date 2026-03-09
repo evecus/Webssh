@@ -664,19 +664,18 @@ const indexHTMLTemplate = `<!DOCTYPE html>
     </div>
     <div id="terminal"></div>
     <div class="vkb" id="vkb">
+      <button class="vkb-btn" ontouchend="e(event);sendKey('-')" onclick="sendKey('-')">-</button>
+      <button class="vkb-btn" ontouchend="e(event);sendKey('/')" onclick="sendKey('/')">/</button>
+      <button class="vkb-btn" ontouchend="e(event);sendKey('_')" onclick="sendKey('_')">_</button>
+      <button class="vkb-btn" ontouchend="e(event);sendKey('~')" onclick="sendKey('~')">~</button>
+      <button class="vkb-btn" ontouchend="e(event);sendKey('=')" onclick="sendKey('=')">=</button>
       <button class="vkb-btn" ontouchend="e(event);sendCtrl('c')" onclick="sendCtrl('c')">Ctrl+C</button>
-      <button class="vkb-btn" ontouchend="e(event);sendCtrl('z')" onclick="sendCtrl('z')">Ctrl+Z</button>
-      <button class="vkb-btn" ontouchend="e(event);sendCtrl('d')" onclick="sendCtrl('d')">Ctrl+D</button>
-      <button class="vkb-btn" ontouchend="e(event);sendKey('\t')" onclick="sendKey('\t')">Tab</button>
+      <button class="vkb-btn" ontouchend="e(event);sendKey('\\')" onclick="sendKey('\\')">\</button>
+      <button class="vkb-btn" ontouchend="e(event);sendKey('|')" onclick="sendKey('|')">|</button>
       <button class="vkb-btn" ontouchend="e(event);sendKey('\x1b[A')" onclick="sendKey('\x1b[A')">↑</button>
       <button class="vkb-btn" ontouchend="e(event);sendKey('\x1b[B')" onclick="sendKey('\x1b[B')">↓</button>
       <button class="vkb-btn" ontouchend="e(event);sendKey('\x1b[D')" onclick="sendKey('\x1b[D')">←</button>
       <button class="vkb-btn" ontouchend="e(event);sendKey('\x1b[C')" onclick="sendKey('\x1b[C')">→</button>
-      <button class="vkb-btn" ontouchend="e(event);sendKey('-')" onclick="sendKey('-')">-</button>
-      <button class="vkb-btn" ontouchend="e(event);sendKey('_')" onclick="sendKey('_')">_</button>
-      <button class="vkb-btn" ontouchend="e(event);sendKey('/')" onclick="sendKey('/')">/</button>
-      <button class="vkb-btn" ontouchend="e(event);sendKey('|')" onclick="sendKey('|')">|</button>
-      <button class="vkb-btn" ontouchend="e(event);sendKey('~')" onclick="sendKey('~')">~</button>
       <button class="vkb-btn" ontouchend="e(event);sendKey('\x1b')" onclick="sendKey('\x1b')">ESC</button>
     </div>
   </div>
