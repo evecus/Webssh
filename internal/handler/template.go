@@ -485,7 +485,9 @@ const indexHTMLTemplate = `<!DOCTYPE html>
       font-size:.68rem;cursor:pointer;transition:all .2s;white-space:nowrap;flex-shrink:0;}
     .btn-disc:hover{background:#ef4444;color:#fff;}
     /* 修复：终端区域允许触摸纵向滚动，阻止冒泡给弹窗 */
-    #terminal{flex:1;overflow:hidden;padding:3px;touch-action:pan-y;overscroll-behavior:contain;}
+    #terminal{flex:1;overflow:hidden;padding:3px;touch-action:pan-y;overscroll-behavior:contain;
+      /* 禁止移动端原生文本选择和长按弹出复制菜单 */
+      user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;}
 
     /* ---- VIRTUAL KEYBOARD（修复：多行显示，不再横向滚动） ---- */
     .vkb{display:none;flex-shrink:0;background:#1a2236;border-top:1px solid #1e2d45;
@@ -716,6 +718,7 @@ const indexHTMLTemplate = `<!DOCTYPE html>
       <button class="vkb-btn" ontouchend="e(event);sendKey('_')" onclick="sendKey('_')">_</button>
       <button class="vkb-btn" ontouchend="e(event);sendKey('~')" onclick="sendKey('~')">~</button>
       <button class="vkb-btn" ontouchend="e(event);sendKey('=')" onclick="sendKey('=')">=</button>
+      <button class="vkb-btn" ontouchend="e(event);sendCtrl('c')" onclick="sendCtrl('c')">Ctrl+C</button>
       <button class="vkb-btn" ontouchend="e(event);sendKey('\\')" onclick="sendKey('\\')">\</button>
       <button class="vkb-btn" ontouchend="e(event);sendKey('|')" onclick="sendKey('|')">|</button>
       <button class="vkb-btn" ontouchend="e(event);sendKey('\x1b[A')" onclick="sendKey('\x1b[A')">↑</button>
@@ -723,7 +726,6 @@ const indexHTMLTemplate = `<!DOCTYPE html>
       <button class="vkb-btn" ontouchend="e(event);sendKey('\x1b[D')" onclick="sendKey('\x1b[D')">←</button>
       <button class="vkb-btn" ontouchend="e(event);sendKey('\x1b[C')" onclick="sendKey('\x1b[C')">→</button>
       <button class="vkb-btn" ontouchend="e(event);sendKey('\x1b')" onclick="sendKey('\x1b')">ESC</button>
-      <button class="vkb-btn" ontouchend="e(event);sendCtrl('c')" onclick="sendCtrl('c')">Ctrl+C</button>
     </div>
   </div>
 </div>
@@ -1396,7 +1398,7 @@ function openCopyViewer() {
   // 读取当前 scrollback 中最近100行
   const buf = term.buffer.active;
   const totalLines = buf.length;
-  const startLine = Math.max(0, totalLines - 20);
+  const startLine = Math.max(0, totalLines - 100);
   const lines = [];
   for (let i = startLine; i < totalLines; i++) {
     const line = buf.getLine(i);
