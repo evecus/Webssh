@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -91,6 +92,56 @@ func tofuHostKeyCallback(hostname string, remote net.Addr, key ssh.PublicKey) er
 	// 指纹不匹配 —— 拒绝（可能是 MITM）
 	return fmt.Errorf("SSH host key mismatch for %s: possible MITM attack. "+
 		"If the host key legitimately changed, remove its entry from data/known_hosts", hostname)
+}
+
+// RemoveKnownHost 从 known_hosts 中移除指定 hostname 的所有条目。
+// 用于"服务器指纹已变更，用户确认信任新指纹"场景。
+func RemoveKnownHost(hostname string) error {
+	khMu.Lock()
+	defer khMu.Unlock()
+
+	if err := ensureKnownHostsFile(); err != nil {
+		return fmt.Errorf("failed to ensure known_hosts: %w", err)
+	}
+
+	data, err := os.ReadFile(knownHostsFile)
+	if err != nil {
+		return fmt.Errorf("failed to read known_hosts: %w", err)
+	}
+
+	lines := strings.Split(string(data), "\n")
+	var kept []string
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" || strings.HasPrefix(trimmed, "#") {
+			kept = append(kept, line)
+			continue
+		}
+		// known_hosts 每行格式: "hostname[,...] keytype base64key [comment]"
+		// 只要行首 host 字段包含目标 hostname 就丢弃
+		fields := strings.Fields(trimmed)
+		if len(fields) == 0 {
+			kept = append(kept, line)
+			continue
+		}
+		hosts := strings.Split(fields[0], ",")
+		match := false
+		for _, h := range hosts {
+			if h == hostname {
+				match = true
+				break
+			}
+		}
+		if !match {
+			kept = append(kept, line)
+		}
+	}
+
+	newContent := strings.Join(kept, "\n")
+	// 确保文件末尾无多余空行
+	newContent = strings.TrimRight(newContent, "\n") + "\n"
+
+	return os.WriteFile(knownHostsFile, []byte(newContent), 0600)
 }
 
 

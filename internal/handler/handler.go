@@ -254,6 +254,7 @@ func Register(mux *http.ServeMux, cfg AppConfig) {
 	mux.HandleFunc("/logout", h.logoutHandler)
 	mux.HandleFunc("/api/settings", h.requireAuth(h.settingsAPIHandler))
 	mux.HandleFunc("/api/ssh", h.requireAuth(h.sshProfilesAPIHandler))
+	mux.HandleFunc("/api/trust-host", h.requireAuth(h.trustHostAPIHandler))
 	mux.HandleFunc("/ws", h.requireAuth(h.wsHandler))
 	mux.HandleFunc("/", h.requireAuth(h.indexHandler))
 }
@@ -513,6 +514,34 @@ func (a *appHandler) sshProfilesAPIHandler(w http.ResponseWriter, r *http.Reques
 	default:
 		http.Error(w, "method not allowed", 405)
 	}
+}
+
+// trustHostAPIHandler 处理"用户确认信任新指纹"请求：
+// 从 known_hosts 中移除旧条目，下次连接时 TOFU 会自动记录新指纹。
+func (a *appHandler) trustHostAPIHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	var req struct {
+		Hostname string `json:"hostname"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Hostname == "" {
+		http.Error(w, "invalid request", http.StatusBadRequest)
+		return
+	}
+	// 基本校验：防止路径穿越或注入
+	if strings.ContainsAny(req.Hostname, " \t\r\n/\\") {
+		http.Error(w, "invalid hostname", http.StatusBadRequest)
+		return
+	}
+	if err := sshtunnel.RemoveKnownHost(req.Hostname); err != nil {
+		log.Printf("trust-host: failed to remove known_hosts entry for %s: %v", req.Hostname, err)
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(`{"ok":true}`))
 }
 
 // ---- WebSocket ----

@@ -82,14 +82,14 @@ const setupHTMLTemplate = `<!DOCTYPE html>
     {{if .Error}}<div class="alert"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>{{.Error}}</div>{{end}}
     <form method="POST" action="/setup" autocomplete="off">
       <div class="field">
-        <label>用户名</label>
+        <label data-i18n="label_user">用户名</label>
         <div class="input-wrap">
           <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           <input type="text" name="username" placeholder="设置用户名" required autocomplete="off"/>
         </div>
       </div>
       <div class="field">
-        <label>密码</label>
+        <label data-i18n="label_password">密码</label>
         <div class="input-wrap">
           <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
           <input type="password" name="password" placeholder="设置密码（至少1位）" required autocomplete="new-password"/>
@@ -505,6 +505,7 @@ const indexHTMLTemplate = `<!DOCTYPE html>
       -webkit-tap-highlight-color:transparent;touch-action:manipulation;
       text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
     .vkb-btn:active{background:rgba(168,85,247,0.2);color:#c084fc;border-color:#a855f7;}
+    .vkb-btn.ctrl-active{background:rgba(168,85,247,0.25);color:#c084fc;border-color:#a855f7;box-shadow:0 0 0 2px rgba(168,85,247,0.4);}
 
     /* ---- COPY OVERLAY（移动端长按复制） ---- */
     /* 长按弹出的"复制/取消"小菜单 */
@@ -570,9 +571,9 @@ const indexHTMLTemplate = `<!DOCTYPE html>
   </div>
   <div class="topbar-right">
     {{if .AuthEnabled}}
-    <button class="btn-icon btn-logout" onclick="location.href='/logout'" title="退出登录">
+    <button class="btn-icon btn-logout" onclick="location.href='/logout'" title="退出登录" data-i18n-title="logout">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-      <span>退出</span>
+      <span data-i18n="logout">退出</span>
     </button>
     {{end}}
     <button class="btn-icon spin" onclick="openSettings()" title="设置">
@@ -597,10 +598,10 @@ const indexHTMLTemplate = `<!DOCTYPE html>
     </div>
     <p class="subtitle">Secure Shell in Your Browser</p>
     <div class="pill-bar">
-      <span class="pill"><span class="pill-dot"></span><span>就绪</span></span>
+      <span class="pill"><span class="pill-dot"></span><span data-i18n="pill_ready">就绪</span></span>
       <span class="pill">
         <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-        加密传输
+        <span data-i18n="pill_enc">加密传输</span>
       </span>
     </div>
   </div>
@@ -611,69 +612,69 @@ const indexHTMLTemplate = `<!DOCTYPE html>
       {{if .StoreEnabled}}
       <!-- 主机名（仅store模式） -->
       <div class="field full">
-        <label>主机名（备注）</label>
+        <label data-i18n="label_name">主机名（备注）</label>
         <div class="input-wrap">
           <svg class="input-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-          <input type="text" id="conn-name" placeholder="给这个连接起个名字（可选）"/>
+          <input type="text" id="conn-name" placeholder="给这个连接起个名字（可选）" data-i18n-ph="ph_name"/>
         </div>
       </div>
       {{end}}
 
       <div class="field">
-        <label>主机地址 <span class="req">*</span></label>
+        <label><span data-i18n="label_host">主机地址</span> <span class="req">*</span></label>
         <div class="input-wrap">
           <svg class="input-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-          <input type="text" id="host" placeholder="192.168.1.1 或 example.com"/>
+          <input type="text" id="host" placeholder="192.168.1.1 或 example.com" data-i18n-ph="ph_host"/>
         </div>
       </div>
       <div class="field">
-        <label>端口</label>
+        <label data-i18n="label_port">端口</label>
         <div class="input-wrap">
           <svg class="input-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
           <input type="number" id="port" value="22" min="1" max="65535"/>
         </div>
       </div>
       <div class="field full">
-        <label>用户名</label>
+        <label data-i18n="label_user">用户名</label>
         <div class="input-wrap">
           <svg class="input-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          <input type="text" id="username" placeholder="root（默认）"/>
+          <input type="text" id="username" placeholder="root（默认）" data-i18n-ph="ph_user"/>
         </div>
       </div>
 
       <!-- Auth Tabs -->
       <div class="field full">
         <div class="auth-tabs">
-          <button class="auth-tab active" data-tab="password">密码登录</button>
-          <button class="auth-tab" data-tab="key">私钥登录</button>
+          <button class="auth-tab active" data-tab="password" data-i18n="tab_password">密码登录</button>
+          <button class="auth-tab" data-tab="key" data-i18n="tab_key">私钥登录</button>
         </div>
       </div>
       <div class="auth-pane active" id="pane-password">
         <div class="field full">
-          <label>密码</label>
+          <label data-i18n="label_password">密码</label>
           <div class="input-wrap">
             <svg class="input-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            <input type="password" id="password" placeholder="请输入密码" oninput="if(selectedProfileId){selectedProfileId=null;this.placeholder='请输入密码';}"/>
+            <input type="password" id="password" placeholder="请输入密码" data-i18n-ph="ph_password" oninput="if(selectedProfileId){selectedProfileId=null;this.placeholder=t('ph_password');}"/>
           </div>
         </div>
       </div>
       <div class="auth-pane" id="pane-key">
         <div class="field">
-          <label>私钥文件</label>
+          <label data-i18n="label_keyfile">私钥文件</label>
           <div class="file-wrap">
             <button class="file-btn" onclick="document.getElementById('private-key-file').click()">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-              选择文件
+              <span data-i18n="btn_choose_file">选择文件</span>
             </button>
-            <span class="file-name" id="key-file-name">未选择私钥文件</span>
+            <span class="file-name" id="key-file-name" data-i18n="no_key_file">未选择私钥文件</span>
           </div>
           <input type="file" id="private-key-file"/>
         </div>
         <div class="field">
-          <label>密钥口令</label>
+          <label data-i18n="label_passphrase">密钥口令</label>
           <div class="input-wrap">
             <svg class="input-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
-            <input type="password" id="passphrase" placeholder="如需密钥口令请输入"/>
+            <input type="password" id="passphrase" placeholder="如需密钥口令请输入" data-i18n-ph="ph_passphrase"/>
           </div>
         </div>
       </div>
@@ -683,18 +684,18 @@ const indexHTMLTemplate = `<!DOCTYPE html>
       <div class="store-actions">
         <button class="btn-secondary" onclick="saveSSHProfile()">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-          保存
+          <span data-i18n="btn_save">保存</span>
         </button>
         <button class="btn-secondary" onclick="openSSHList()">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-          SSH 列表
+          <span data-i18n="btn_list">SSH 列表</span>
         </button>
       </div>
       {{end}}
 
       <button class="btn-connect" id="btn-connect" onclick="connect()">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
-        <span>连接</span>
+        <span data-i18n="btn_connect">连接</span>
       </button>
     </div>
   </div>
@@ -708,7 +709,7 @@ const indexHTMLTemplate = `<!DOCTYPE html>
       <div class="term-title-text" id="term-title">terminal</div>
       <button class="btn-disc" onclick="disconnect()">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        断开连接
+        <span data-i18n="btn_disconnect">断开连接</span>
       </button>
     </div>
     <div id="terminal"></div>
@@ -725,7 +726,7 @@ const indexHTMLTemplate = `<!DOCTYPE html>
       <button class="vkb-btn" ontouchend="e(event);sendKey('\x1b[D')" onclick="sendKey('\x1b[D')">←</button>
       <button class="vkb-btn" ontouchend="e(event);sendKey('\x1b[C')" onclick="sendKey('\x1b[C')">→</button>
       <button class="vkb-btn" ontouchend="e(event);sendKey('\x1b')" onclick="sendKey('\x1b')">ESC</button>
-      <button class="vkb-btn" ontouchend="e(event);sendCtrl('c')" onclick="sendCtrl('c')">Ctrl+C</button>
+      <button class="vkb-btn" id="ctrl-btn" ontouchend="e(event);toggleCtrl()" onclick="toggleCtrl()">Ctrl</button>
     </div>
   </div>
 </div>
@@ -733,16 +734,16 @@ const indexHTMLTemplate = `<!DOCTYPE html>
 <!-- Long-press menu（移动端长按终端弹出） -->
 <div id="longpress-menu">
   <div class="lp-card">
-    <button class="lp-btn copy" onclick="openCopyViewer()">复制终端内容</button>
-    <button class="lp-btn cancel" onclick="closeLongpressMenu()">取消</button>
+    <button class="lp-btn copy" onclick="openCopyViewer()" data-i18n="btn_copy_term">复制终端内容</button>
+    <button class="lp-btn cancel" onclick="closeLongpressMenu()" data-i18n="btn_cancel">取消</button>
   </div>
 </div>
 
 <!-- Copy viewer（展示终端当前屏幕文本供复制） -->
 <div id="copy-viewer">
   <div class="cv-header">
-    <span class="cv-title">终端内容</span>
-    <span class="cv-hint">长按文本即可复制</span>
+    <span class="cv-title" data-i18n="cv_title">终端内容</span>
+    <span class="cv-hint" data-i18n="cv_hint">长按文本即可复制</span>
     <button class="cv-close" onclick="closeCopyViewer()">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
@@ -754,53 +755,53 @@ const indexHTMLTemplate = `<!DOCTYPE html>
 <div class="modal-backdrop" id="settings-modal">
   <div class="modal">
     <div class="modal-header">
-      <span class="modal-title">设置</span>
+      <span class="modal-title" data-i18n="s_title">设置</span>
       <button class="modal-close" onclick="closeSettings()">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
     <div class="modal-body">
       <div class="setting-group">
-        <div class="setting-label">主题色</div>
+        <div class="setting-label" data-i18n="s_theme">主题色</div>
         <div class="color-grid">
           <div class="color-swatch active" data-theme="purple-pink" onclick="setTheme('purple-pink',this)">
             <div class="swatch-dot" style="background:linear-gradient(135deg,#a855f7,#ec4899)"></div>
-            <span>紫粉</span>
+            <span data-i18n="theme_purple">紫粉</span>
           </div>
           <div class="color-swatch" data-theme="blue-white" onclick="setTheme('blue-white',this)">
             <div class="swatch-dot" style="background:linear-gradient(135deg,#3b6bff,#7c3aed)"></div>
-            <span>蓝白</span>
+            <span data-i18n="theme_blue">蓝白</span>
           </div>
           <div class="color-swatch" data-theme="dark-blue" onclick="setTheme('dark-blue',this)">
             <div class="swatch-dot" style="background:linear-gradient(135deg,#00d4ff,#7c3aed)"></div>
-            <span>黑蓝</span>
+            <span data-i18n="theme_darkblue">黑蓝</span>
           </div>
           <div class="color-swatch" data-theme="forest" onclick="setTheme('forest',this)">
             <div class="swatch-dot" style="background:linear-gradient(135deg,#059669,#0891b2)"></div>
-            <span>森绿</span>
+            <span data-i18n="theme_forest">森绿</span>
           </div>
         </div>
       </div>
       <div class="setting-group">
-        <div class="setting-label">终端背景</div>
+        <div class="setting-label" data-i18n="s_termbg">终端背景</div>
         <div class="term-bg-grid" id="term-bg-grid">
-          <div class="term-bg-swatch active" data-bg="dark" onclick="setTermBg('dark',this)" title="深夜黑">
+          <div class="term-bg-swatch active" data-bg="dark" onclick="setTermBg('dark',this)" data-i18n-title="bg_dark">
             <div class="bg-preview" style="background:#0d1117;border:2px solid #30363d;">
               <span style="color:#58a6ff">~$</span><span style="color:#e6edf3"> ls</span>
             </div>
-            <span>深夜黑</span>
+            <span data-i18n="bg_dark">深夜黑</span>
           </div>
-          <div class="term-bg-swatch" data-bg="dracula" onclick="setTermBg('dracula',this)" title="德古拉">
+          <div class="term-bg-swatch" data-bg="dracula" onclick="setTermBg('dracula',this)" data-i18n-title="bg_dracula">
             <div class="bg-preview" style="background:#282a36;border:2px solid #44475a;">
               <span style="color:#ff79c6">~$</span><span style="color:#f8f8f2"> ls</span>
             </div>
-            <span>德古拉</span>
+            <span data-i18n="bg_dracula">德古拉</span>
           </div>
-          <div class="term-bg-swatch" data-bg="solarized" onclick="setTermBg('solarized',this)" title="太阳化">
+          <div class="term-bg-swatch" data-bg="solarized" onclick="setTermBg('solarized',this)" data-i18n-title="bg_solarized">
             <div class="bg-preview" style="background:#002b36;border:2px solid #073642;">
               <span style="color:#2aa198">~$</span><span style="color:#839496"> ls</span>
             </div>
-            <span>太阳化</span>
+            <span data-i18n="bg_solarized">太阳化</span>
           </div>
           <div class="term-bg-swatch" data-bg="nord" onclick="setTermBg('nord',this)" title="Nord">
             <div class="bg-preview" style="background:#2e3440;border:2px solid #3b4252;">
@@ -814,27 +815,27 @@ const indexHTMLTemplate = `<!DOCTYPE html>
             </div>
             <span>Monokai</span>
           </div>
-          <div class="term-bg-swatch" data-bg="light" onclick="setTermBg('light',this)" title="亮白">
+          <div class="term-bg-swatch" data-bg="light" onclick="setTermBg('light',this)" data-i18n-title="bg_light">
             <div class="bg-preview" style="background:#ffffff;border:2px solid #e2e8f0;">
               <span style="color:#7c3aed">~$</span><span style="color:#1e293b"> ls</span>
             </div>
-            <span>亮白</span>
+            <span data-i18n="bg_light">亮白</span>
           </div>
         </div>
       </div>
       <div class="setting-group">
-        <div class="setting-label">终端字体</div>
+        <div class="setting-label" data-i18n="s_termfont">终端字体</div>
         <select class="font-select" id="term-font-select" onchange="setTermFont(this.value)">
-          <option value="'JetBrains Mono',monospace">JetBrains Mono（默认）</option>
+          <option value="'JetBrains Mono',monospace" data-i18n="font_default">JetBrains Mono（默认）</option>
           <option value="'Fira Code',monospace">Fira Code</option>
           <option value="'Source Code Pro',monospace">Source Code Pro</option>
           <option value="'Courier New',monospace">Courier New</option>
           <option value="'Consolas',monospace">Consolas</option>
-          <option value="monospace">系统等宽字体</option>
+          <option value="monospace" data-i18n="font_sys">系统等宽字体</option>
         </select>
       </div>
       <div class="setting-group">
-        <div class="setting-label">终端字号</div>
+        <div class="setting-label" data-i18n="s_fontsize">终端字号</div>
         <div class="font-size-group" id="font-size-group">
           <button class="font-size-btn" data-size="12" onclick="setFontSize(12,this)">12</button>
           <button class="font-size-btn" data-size="13" onclick="setFontSize(13,this)">13</button>
@@ -845,19 +846,19 @@ const indexHTMLTemplate = `<!DOCTYPE html>
         </div>
       </div>
       <div class="setting-group">
-        <div class="setting-label">语言</div>
+        <div class="setting-label" data-i18n="s_lang">语言</div>
         <div class="toggle-group">
           <button class="toggle-btn active" id="lang-zh" onclick="setLang('zh',this)">中文</button>
           <button class="toggle-btn" id="lang-en" onclick="setLang('en',this)">English</button>
         </div>
       </div>
       <div class="setting-group">
-        <div class="setting-label">界面字体</div>
+        <div class="setting-label" data-i18n="s_uifont">界面字体</div>
         <select class="font-select" id="ui-font-select" onchange="setUIFont(this.value)">
-          <option value="'Outfit','Noto Sans SC',sans-serif">Outfit（默认）</option>
+          <option value="'Outfit','Noto Sans SC',sans-serif" data-i18n="uifont_default">Outfit（默认）</option>
           <option value="'Noto Sans SC',sans-serif">Noto Sans SC</option>
-          <option value="system-ui,sans-serif">系统字体</option>
-          <option value="Georgia,serif">Georgia（衬线）</option>
+          <option value="system-ui,sans-serif" data-i18n="uifont_sys">系统字体</option>
+          <option value="Georgia,serif" data-i18n="uifont_serif">Georgia（衬线）</option>
         </select>
       </div>
     </div>
@@ -868,24 +869,44 @@ const indexHTMLTemplate = `<!DOCTYPE html>
 <div class="modal-backdrop" id="ssh-list-modal">
   <div class="modal">
     <div class="modal-header">
-      <span class="modal-title">已保存的 SSH 连接</span>
+      <span class="modal-title" data-i18n="ssh_list_title">已保存的 SSH 连接</span>
       <button class="modal-close" onclick="closeSSHList()">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
     <div class="modal-body" style="padding-bottom:8px;">
       <div class="ssh-list" id="ssh-list-content">
-        <div class="ssh-empty">暂无保存的连接</div>
+        <div class="ssh-empty" id="ssh-empty-placeholder">暂无保存的连接</div>
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn-small" onclick="closeSSHList()">取消</button>
-      <button class="btn-small primary" onclick="selectSSHProfile()">选择</button>
+      <button class="btn-small" onclick="closeSSHList()" data-i18n="btn_cancel">取消</button>
+      <button class="btn-small primary" onclick="selectSSHProfile()" data-i18n="btn_select">选择</button>
     </div>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- 指纹变更确认对话框 -->
+<div class="modal-backdrop" id="trust-host-modal">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-header">
+      <span class="modal-title" style="color:var(--warn,#f59e0b);">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:6px"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <span data-i18n="trust_title">服务器指纹已变更</span>
+      </span>
+    </div>
+    <div class="modal-body" style="gap:12px;">
+      <p style="color:var(--text);font-size:.88rem;line-height:1.6;margin:0;" id="trust-body1-p"></p>
+      <p style="color:var(--text-muted);font-size:.82rem;line-height:1.6;margin:0;" id="trust-body2-p"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-small" onclick="closeTrustModal()" data-i18n="btn_cancel">取消</button>
+      <button class="btn-small primary" onclick="confirmTrustHost()" style="background:var(--warn,#f59e0b);border-color:var(--warn,#f59e0b);" data-i18n="btn_trust">信任新指纹并重连</button>
+    </div>
+  </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
@@ -897,21 +918,136 @@ const AUTH_ENABLED = {{if .AuthEnabled}}true{{else}}false{{end}};
 // ---- i18n ----
 const i18n = {
   zh: {
+    // toast / status
     err_host: '请填写主机地址', err_auth: '请提供密码或私钥',
     connecting: '正在连接', connected: '已连接', disconnected: '已断开连接', conn_error: '连接失败',
     save_ok: '连接已保存', save_err: '保存失败', load_err: '加载失败',
-    del_confirm: '确认删除此连接？'
+    del_confirm: '确认删除此连接？',
+    no_saved: '暂无保存的连接', saved_hint: '填写信息后点击&quot;保存&quot;即可',
+    pw_saved: '已保存，连接时自动使用', selected: '已选择',
+    btn_copy_term: '复制终端内容', cv_title: '终端内容', cv_hint: '长按文本即可复制',
+    del_title: '删除',
+    trust_clear_err: '清除指纹失败，请手动删除 data/known_hosts 中对应条目',
+    trust_reconnect: '已信任新指纹，正在重连…',
+    // topbar
+    logout: '退出', settings_title: '设置',
+    // header
+    subtitle: 'Secure Shell in Your Browser',
+    pill_ready: '就绪', pill_enc: '加密传输',
+    // form labels / placeholders
+    label_name: '主机名（备注）', ph_name: '给这个连接起个名字（可选）',
+    label_host: '主机地址', label_port: '端口', label_user: '用户名',
+    ph_host: '192.168.1.1 或 example.com', ph_user: 'root（默认）',
+    tab_password: '密码登录', tab_key: '私钥登录',
+    label_password: '密码', ph_password: '请输入密码',
+    label_keyfile: '私钥文件', btn_choose_file: '选择文件', no_key_file: '未选择私钥文件',
+    label_passphrase: '密钥口令', ph_passphrase: '如需密钥口令请输入',
+    btn_save: '保存', btn_list: 'SSH 列表', btn_connect: '连接',
+    btn_disconnect: '断开连接',
+    // settings modal
+    s_title: '设置',
+    s_theme: '主题色', s_termbg: '终端背景', s_termfont: '终端字体',
+    s_fontsize: '终端字号', s_lang: '语言', s_uifont: '界面字体',
+    theme_purple: '紫粉', theme_blue: '蓝白', theme_darkblue: '黑蓝', theme_forest: '森绿',
+    bg_dark: '深夜黑', bg_dracula: '德古拉', bg_solarized: '太阳化', bg_light: '亮白',
+    font_default: 'JetBrains Mono（默认）', font_sys: '系统等宽字体',
+    uifont_default: 'Outfit（默认）', uifont_sys: '系统字体', uifont_serif: 'Georgia（衬线）',
+    // ssh list modal
+    ssh_list_title: '已保存的 SSH 连接',
+    btn_cancel: '取消', btn_select: '选择',
+    // trust modal
+    trust_title: '服务器指纹已变更',
+    trust_body1: '目标服务器', trust_body2: '的 SSH 主机密钥与记录不一致。',
+    trust_body3: '如果你刚刚重装系统或更换了服务器，可以点击',
+    trust_body3b: '信任新指纹',
+    trust_body3c: '继续连接。',
+    trust_body4: '如果你没有更换服务器，请勿继续，这可能是中间人攻击（MITM）。',
+    btn_trust: '信任新指纹并重连',
   },
   en: {
+    // toast / status
     err_host: 'Please enter a hostname', err_auth: 'Please provide password or key',
     connecting: 'Connecting to', connected: 'Connected to', disconnected: 'Disconnected', conn_error: 'Connection failed',
     save_ok: 'Profile saved', save_err: 'Save failed', load_err: 'Load failed',
-    del_confirm: 'Delete this profile?'
+    del_confirm: 'Delete this profile?',
+    no_saved: 'No saved connections', saved_hint: 'Fill in the form and click &quot;Save&quot;',
+    pw_saved: 'Saved — will be used on connect', selected: 'Selected',
+    btn_copy_term: 'Copy Terminal Output', cv_title: 'Terminal Content', cv_hint: 'Long-press text to copy',
+    del_title: 'Delete',
+    trust_clear_err: 'Failed to clear fingerprint. Please manually remove the entry from data/known_hosts',
+    trust_reconnect: 'New fingerprint trusted, reconnecting…',
+    // topbar
+    logout: 'Logout', settings_title: 'Settings',
+    // header
+    subtitle: 'Secure Shell in Your Browser',
+    pill_ready: 'Ready', pill_enc: 'Encrypted',
+    // form labels / placeholders
+    label_name: 'Profile Name', ph_name: 'Give this connection a name (optional)',
+    label_host: 'Host', label_port: 'Port', label_user: 'Username',
+    ph_host: '192.168.1.1 or example.com', ph_user: 'root (default)',
+    tab_password: 'Password', tab_key: 'Private Key',
+    label_password: 'Password', ph_password: 'Enter password',
+    label_keyfile: 'Private Key File', btn_choose_file: 'Choose File', no_key_file: 'No key file selected',
+    label_passphrase: 'Passphrase', ph_passphrase: 'Enter passphrase if required',
+    btn_save: 'Save', btn_list: 'SSH List', btn_connect: 'Connect',
+    btn_disconnect: 'Disconnect',
+    // settings modal
+    s_title: 'Settings',
+    s_theme: 'Theme', s_termbg: 'Terminal Background', s_termfont: 'Terminal Font',
+    s_fontsize: 'Font Size', s_lang: 'Language', s_uifont: 'UI Font',
+    theme_purple: 'Purple', theme_blue: 'Blue', theme_darkblue: 'Dark Blue', theme_forest: 'Forest',
+    bg_dark: 'Dark', bg_dracula: 'Dracula', bg_solarized: 'Solarized', bg_light: 'Light',
+    font_default: 'JetBrains Mono (Default)', font_sys: 'System Monospace',
+    uifont_default: 'Outfit (Default)', uifont_sys: 'System Font', uifont_serif: 'Georgia (Serif)',
+    // ssh list modal
+    ssh_list_title: 'Saved SSH Connections',
+    btn_cancel: 'Cancel', btn_select: 'Select',
+    // trust modal
+    trust_title: 'Host Key Changed',
+    trust_body1: 'The SSH host key of', trust_body2: 'does not match the stored fingerprint.',
+    trust_body3: 'If you recently reinstalled or replaced the server, click',
+    trust_body3b: 'Trust New Key',
+    trust_body3c: 'to continue.',
+    trust_body4: 'If you did not change the server, do not proceed — this may be a MITM attack.',
+    btn_trust: 'Trust New Key & Reconnect',
   }
 };
 let currentLang = 'zh', currentTermFont = "'JetBrains Mono',monospace";
 let currentTermBg = 'dark', currentFontSize = 14;
 const t = k => (i18n[currentLang] || i18n.zh)[k] || k;
+
+// ---- 应用 i18n 到 DOM ----
+function applyI18n() {
+  // 用 data-i18n="key" 设置 textContent
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const k = el.getAttribute('data-i18n');
+    el.textContent = t(k);
+  });
+  // 用 data-i18n-ph="key" 设置 placeholder
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+    el.placeholder = t(el.getAttribute('data-i18n-ph'));
+  });
+  // 用 data-i18n-title="key" 设置 title
+  document.querySelectorAll('[data-i18n-title]').forEach(el => {
+    el.title = t(el.getAttribute('data-i18n-title'));
+  });
+  // 连接按钮（含 svg，只更新 span）
+  const connSpan = document.querySelector('#btn-connect span');
+  if (connSpan) connSpan.textContent = t('btn_connect');
+  // 重置按钮文字也要跟语言走
+  resetBtn();
+  // trust modal 正文（含内联高亮，需 innerHTML 拼接）
+  const b1 = document.getElementById('trust-body1-p');
+  if (b1) {
+    b1.innerHTML = t('trust_body1') + ' <strong id="trust-host-name" style="color:var(--accent,#a855f7)">' +
+      (_pendingTrustHostname || '') + '</strong> ' + t('trust_body2');
+  }
+  const b2 = document.getElementById('trust-body2-p');
+  if (b2) {
+    b2.innerHTML = t('trust_body3') + ' <strong>' + t('trust_body3b') + '</strong> ' + t('trust_body3c') +
+      '<br>' + t('trust_body4');
+  }
+}
 
 // ---- Terminal Background Themes ----
 const TERM_THEMES = {
@@ -1008,6 +1144,7 @@ function setLang(lang, btn) {
   currentLang = lang;
   document.querySelectorAll('#lang-zh,#lang-en').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
+  applyI18n();
   saveSettings({ lang });
 }
 
@@ -1081,6 +1218,7 @@ function applySettings() {
     document.querySelectorAll('#lang-zh,#lang-en').forEach(b => b.classList.remove('active'));
     if (btn) btn.classList.add('active');
   }
+  applyI18n();
 }
 
 // ---- Modals ----
@@ -1164,7 +1302,7 @@ async function deleteSSHProfile(id, ev) {
 function renderSSHList() {
   const container = document.getElementById('ssh-list-content');
   if (!sshProfiles || sshProfiles.length === 0) {
-    container.innerHTML = '<div class="ssh-empty">暂无保存的连接<br><small style="opacity:.6">填写信息后点击&quot;保存&quot;按钮即可</small></div>';
+    container.innerHTML = '<div class="ssh-empty">' + t('no_saved') + '<br><small style="opacity:.6">' + t('saved_hint') + '</small></div>';
     return;
   }
   const svgServer = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>';
@@ -1178,7 +1316,7 @@ function renderSSHList() {
         '<div class="ssh-item-name">' + escHtml(p.name||p.host) + '</div>' +
         '<div class="ssh-item-detail">' + escHtml(p.username||'root') + '@' + escHtml(p.host) + ':' + (p.port||22) + '</div>' +
       '</div>' +
-      '<button class="ssh-item-del" onclick="deleteSSHProfile(\'' + safeId + '\',event)" title="删除">' + svgDel + '</button>' +
+      '<button class="ssh-item-del" onclick="deleteSSHProfile(\'' + safeId + '\',event)" title="' + t('del_title') + '">' + svgDel + '</button>' +
     '</div>';
   }).join('');
 }
@@ -1219,7 +1357,7 @@ function selectSSHProfile() {
   if (tab === 'password') {
     const pwEl = document.getElementById('password');
     pwEl.value = '';
-    pwEl.placeholder = '已保存，连接时自动使用';
+    pwEl.placeholder = t('pw_saved');
   } else {
     document.getElementById('passphrase').value = '';
     privateKeyData = '';
@@ -1227,7 +1365,7 @@ function selectSSHProfile() {
     const keyLabel = document.querySelector('#pane-key .field-label') || document.querySelector('#pane-key label');
   }
   closeSSHList();
-  showToast('✓ 已选择：' + (p.name || p.host));
+  showToast('✓ ' + t('selected') + '：' + (p.name || p.host));
 }
 
 // ---- Terminal ----
@@ -1242,6 +1380,29 @@ function sendKey(k) {
 }
 function sendCtrl(c) { sendKey(String.fromCharCode(c.charCodeAt(0) - 96)); }
 
+// ---- Ctrl 粘滞键 ----
+let ctrlSticky = false;
+function toggleCtrl() {
+  ctrlSticky = !ctrlSticky;
+  const btn = document.getElementById('ctrl-btn');
+  if (btn) btn.classList.toggle('ctrl-active', ctrlSticky);
+  if (term) { term.focus(); requestAnimationFrame(() => term.focus()); }
+}
+// 拦截终端键盘输入：若 Ctrl 粘滞激活，将普通字符转为 Ctrl+字符
+function applyCtrlIfSticky(key) {
+  if (!ctrlSticky) return false;
+  // 仅处理 a-z（大小写均可）
+  const ch = key.length === 1 ? key.toLowerCase() : null;
+  if (ch && ch >= 'a' && ch <= 'z') {
+    ctrlSticky = false;
+    const btn = document.getElementById('ctrl-btn');
+    if (btn) btn.classList.remove('ctrl-active');
+    sendKey(String.fromCharCode(ch.charCodeAt(0) - 96));
+    return true;
+  }
+  return false;
+}
+
 function updateVkb() {
   const vkb = document.getElementById('vkb');
   if (!vkb) return;
@@ -1252,7 +1413,7 @@ function updateVkb() {
 function resetBtn() {
   const btn = document.getElementById('btn-connect');
   btn.disabled = false;
-  btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg><span>连接</span>';
+  btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg><span>' + t('btn_connect') + '</span>';
 }
 
 function initTerm() {
@@ -1279,6 +1440,8 @@ function initTerm() {
   term.open(document.getElementById('terminal'));
   setTimeout(() => fitAddon.fit(), 80);
   term.onData(data => {
+    // Ctrl 粘滞键：若处于激活状态，拦截下一个字母并转为 Ctrl+字母
+    if (ctrlSticky && applyCtrlIfSticky(data)) return;
     if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({type:'input',data}));
   });
   if (mobile && navigator.clipboard) {
@@ -1425,6 +1588,75 @@ function closeCopyViewer() {
   if (term) setTimeout(() => term.focus(), 50);
 }
 
+// ---- 指纹信任对话框 ----
+let _pendingConnectMsg = null;
+let _pendingTrustHostname = null;
+
+function closeTrustModal() {
+  document.getElementById('trust-host-modal').classList.remove('open');
+  _pendingConnectMsg = null;
+  _pendingTrustHostname = null;
+}
+
+async function confirmTrustHost() {
+  if (!_pendingTrustHostname) { closeTrustModal(); return; }
+  // hostname 格式为 "host:port"，只取 host 部分传给后端
+  const hostname = _pendingTrustHostname.split(':')[0];
+  try {
+    const res = await fetch('/api/trust-host', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ hostname })
+    });
+    if (!res.ok) throw new Error('server error');
+  } catch (err) {
+    showToast('✗ ' + t('trust_clear_err'));
+    closeTrustModal();
+    return;
+  }
+  // 清除旧指纹成功，自动重连
+  const msg = _pendingConnectMsg;
+  closeTrustModal();
+  showToast('✓ ' + t('trust_reconnect'));
+  setTimeout(() => { _reconnectWith(msg); }, 400);
+}
+
+function _reconnectWith(connectMsg) {
+  if (ws) { ws.close(); ws = null; }
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  ws = new WebSocket(proto + '://' + location.host + '/ws');
+  const btn = document.getElementById('btn-connect');
+  btn.disabled = true;
+  ws.onopen = () => ws.send(JSON.stringify(connectMsg));
+  ws.onmessage = e => {
+    const msg = JSON.parse(e.data);
+    if (msg.type === 'connected') {
+      resetBtn();
+      // 从 connectMsg 提取 label
+      const lbl = connectMsg.profile_id
+        ? connectMsg.profile_id
+        : (connectMsg.username||'user') + '@' + (connectMsg.host||'?') + ':' + (connectMsg.port||22);
+      showToast('✓ ' + t('connected') + ': ' + lbl);
+      initTerm();
+      openTermWindow(lbl);
+    } else if (msg.type === 'output') {
+      if (term) term.write(msg.data);
+    } else if (msg.type === 'error') {
+      showToast('✗ ' + t('conn_error') + ': ' + msg.data);
+      resetBtn(); if (ws) { ws.close(); ws = null; } closeTermWindow();
+    } else if (msg.type === 'closed') {
+      showToast('⊗ ' + t('disconnected'));
+      resetBtn(); ws = null; closeTermWindow();
+    }
+  };
+  ws.onerror = () => { showToast('✗ ' + t('conn_error')); resetBtn(); ws = null; closeTermWindow(); };
+  ws.onclose = () => { resetBtn(); ws = null; };
+}
+
+document.getElementById('trust-host-modal').addEventListener('click', ev => {
+  if (ev.target === ev.currentTarget) closeTrustModal();
+});
+
 function connect() {
   const host = document.getElementById('host').value.trim();
   const port = parseInt(document.getElementById('port').value) || 22;
@@ -1469,8 +1701,16 @@ function connect() {
     } else if (msg.type === 'output') {
       if (term) term.write(msg.data);
     } else if (msg.type === 'error') {
-      showToast('✗ ' + t('conn_error') + ': ' + msg.data);
       resetBtn(); if (ws) { ws.close(); ws = null; } closeTermWindow();
+      // 检测 SSH 指纹不匹配错误，弹出确认框
+      if (msg.data && msg.data.includes('host key mismatch')) {
+        _pendingConnectMsg = connectMsg;
+        _pendingTrustHostname = host + ':' + port;
+        applyI18n();
+        document.getElementById('trust-host-modal').classList.add('open');
+      } else {
+        showToast('✗ ' + t('conn_error') + ': ' + msg.data);
+      }
     } else if (msg.type === 'closed') {
       showToast('⊗ ' + t('disconnected'));
       resetBtn(); ws = null; closeTermWindow();
