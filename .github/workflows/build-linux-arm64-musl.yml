@@ -1,0 +1,47 @@
+name: Build linux/arm64
+
+on:
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  TARGET: aarch64-unknown-linux-musl
+  BIN_NAME: webssh-linux-arm64
+
+jobs:
+  build:
+    name: Build static musl binary (arm64)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # redb 4.5 的 MSRV 为 1.90；cross 使用宿主 rustup 工具链，先在宿主装好 stable
+      - name: Setup Rust (stable)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-unknown-linux-musl
+
+      # cross 提供带 aarch64 musl 交叉工具链的 Docker 镜像，
+      # 供 ring 等含 C/汇编代码的纯 Rust 依赖静态链接使用
+      - name: Install cross
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cross
+
+      - name: Build release binary
+        run: cross build --release --locked --target "$TARGET"
+
+      - name: Verify it is a fully static musl binary
+        run: |
+          cp "target/$TARGET/release/webssh" "$BIN_NAME"
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: test
+          prerelease: true
+          files: $BIN_NAME
