@@ -42,4 +42,4 @@ jobs:
         with:
           tag_name: test
           prerelease: true
-          files: disk/*
+          files: dist/*
