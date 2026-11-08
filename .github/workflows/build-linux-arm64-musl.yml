@@ -6,15 +6,11 @@ on:
 env:
   CARGO_TERM_COLOR: always
   TARGET: aarch64-unknown-linux-musl
-  BIN_NAME: webssh-linux-arm64
 
 jobs:
   build:
     name: Build static musl binary (arm64)
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -37,11 +33,13 @@ jobs:
 
       - name: Verify it is a fully static musl binary
         run: |
-          cp "target/$TARGET/release/webssh" "$BIN_NAME"
+          mkdir dist
+          cp "target/$TARGET/release/webssh" dist/webssh-linux-arm64
+          
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: test
           prerelease: true
-          files: $BIN_NAME
+          files: disk/*
